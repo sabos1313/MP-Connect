@@ -77,7 +77,7 @@ Dashboard, estoque, aniversários, relatórios e configurações consultam dados
 
 O workflow usa `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` como **Variables** públicas do repositório, não como secrets administrativos. Configure essas duas variables em `Settings > Secrets and variables > Actions > Variables`, habilite GitHub Pages com `GitHub Actions` como source e faça push na branch `main`. O workflow cria `404.html` para preservar o `BrowserRouter` em refresh.
 
-URL esperada para este repositório: `https://sabos1313.github.io/MP-Connect/`. Ela só deve ser considerada publicada depois de uma execução bem-sucedida do workflow de deploy e uma verificação HTTP real.
+URL publicada para este repositório: `https://sabos1313.github.io/MP-Connect/`. As rotas internas usam hash (`/#/insumos`, `/#/produtos`, etc.) para evitar 404 de refresh no GitHub Pages.
 
 O workflow `ci.yml` roda em pushes e pull requests. O workflow `deploy.yml` roda em pushes na `main` e por `workflow_dispatch`, executando instalação, lint, testes opcionais, build, upload do artefato e deploy oficial do GitHub Pages.
 
