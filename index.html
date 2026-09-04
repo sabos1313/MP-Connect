@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fbfaf8" />
     <title>Maria Paulina Saboaria</title>
+    <script>
+      (function () {
+        var path = window.location.search;
+        if (path.indexOf('?/') === 0) {
+          window.history.replaceState(null, '', path.slice(1) + window.location.hash);
+        }
+      }());
+    </script>
   </head>
   <body>
     <div id="root"></div>
