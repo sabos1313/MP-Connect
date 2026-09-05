@@ -16,6 +16,10 @@ export interface Database {
           { foreignKeyName: 'formula_items_ingredient_id_fkey'; columns: ['ingredient_id']; isOneToOne: false; referencedRelation: 'ingredients'; referencedColumns: ['id'] }
         ];
       };
+      ingredient_purchases: {
+        Row: IngredientPurchase & Record<string, unknown>; Insert: IngredientPurchaseInsert & Record<string, unknown>; Update: IngredientPurchaseUpdate & Record<string, unknown>;
+        Relationships: [{ foreignKeyName: 'ingredient_purchases_ingredient_id_fkey'; columns: ['ingredient_id']; isOneToOne: false; referencedRelation: 'ingredients'; referencedColumns: ['id'] }];
+      };
       customers: { Row: Customer & Record<string, unknown>; Insert: CustomerInsert & Record<string, unknown>; Update: CustomerUpdate & Record<string, unknown>; Relationships: []; };
       sales: {
         Row: Sale & Record<string, unknown>; Insert: SaleInsert & Record<string, unknown>; Update: SaleUpdate & Record<string, unknown>;
@@ -43,6 +47,8 @@ export interface Database {
       create_sale: { Args: { p_customer_id: string | null; p_items: Json; p_discount?: number; p_notes?: string | null }; Returns: string };
       cancel_sale: { Args: { p_sale_id: string; p_reason?: string | null }; Returns: undefined };
       produce_formula: { Args: { p_formula_id: string; p_quantity: number }; Returns: Json };
+      register_ingredient_purchase: { Args: { p_ingredient_id: string; p_quantity: number; p_unit: StockUnit; p_total_cost: number; p_supplier?: string | null; p_purchase_date?: string; p_notes?: string | null }; Returns: IngredientPurchase };
+      convert_quantity: { Args: { p_quantity: number; p_from_unit: StockUnit; p_to_unit: StockUnit }; Returns: number };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -60,11 +66,11 @@ export interface Product { id: string; name: string; description: string | null;
 export interface ProductInsert { [key: string]: unknown; id?: string; name: string; description?: string | null; sale_price?: number; current_stock?: number; minimum_stock?: number; unit?: StockUnit; active?: boolean; created_at?: string; updated_at?: string; }
 export interface ProductUpdate { [key: string]: unknown; id?: string; name?: string; description?: string | null; sale_price?: number; current_stock?: number; minimum_stock?: number; unit?: StockUnit; active?: boolean; created_at?: string; updated_at?: string; }
 
-export interface Formula { id: string; product_id: string; name: string; description: string | null; yield_quantity: number | null; yield_unit: StockUnit | null; preparation_notes: string | null; created_at: string; updated_at: string; }
-export interface FormulaInsert { [key: string]: unknown; id?: string; product_id: string; name: string; description?: string | null; yield_quantity?: number | null; yield_unit?: StockUnit | null; preparation_notes?: string | null; created_at?: string; updated_at?: string; }
-export interface FormulaUpdate { [key: string]: unknown; id?: string; product_id?: string; name?: string; description?: string | null; yield_quantity?: number | null; yield_unit?: StockUnit | null; preparation_notes?: string | null; created_at?: string; updated_at?: string; }
+export interface Formula { id: string; product_id: string; name: string; description: string | null; yield_quantity: number | null; yield_unit: StockUnit | null; preparation_notes: string | null; additional_cost: number; desired_markup: number; sale_price: number | null; created_at: string; updated_at: string; }
+export interface FormulaInsert { [key: string]: unknown; id?: string; product_id: string; name: string; description?: string | null; yield_quantity?: number | null; yield_unit?: StockUnit | null; preparation_notes?: string | null; additional_cost?: number; desired_markup?: number; sale_price?: number | null; created_at?: string; updated_at?: string; }
+export interface FormulaUpdate { [key: string]: unknown; id?: string; product_id?: string; name?: string; description?: string | null; yield_quantity?: number | null; yield_unit?: StockUnit | null; preparation_notes?: string | null; additional_cost?: number; desired_markup?: number; sale_price?: number | null; created_at?: string; updated_at?: string; }
 
-export interface FormulaItem { id: string; formula_id: string; ingredient_id: string; quantity: number; unit: StockUnit; notes: string | null; created_at: string; }
+export interface FormulaItem { id: string; formula_id: string; ingredient_id: string; quantity: number; unit: StockUnit; notes: string | null; created_at: string; updated_at: string; }
 export interface FormulaItemInsert { id?: string; formula_id: string; ingredient_id: string; quantity: number; unit: StockUnit; notes?: string | null; created_at?: string; }
 export interface FormulaItemUpdate { id?: string; formula_id?: string; ingredient_id?: string; quantity?: number; unit?: StockUnit; notes?: string | null; created_at?: string; }
 
@@ -88,3 +94,7 @@ export interface StockMovementUpdate { id?: string; ingredient_id?: string | nul
 export interface AppSettings { id: number; company_name: string; currency: string; notes: string | null; created_at: string; updated_at: string; }
 export interface AppSettingsInsert { id?: number; company_name?: string; currency?: string; notes?: string | null; created_at?: string; updated_at?: string; }
 export interface AppSettingsUpdate { id?: number; company_name?: string; currency?: string; notes?: string | null; created_at?: string; updated_at?: string; }
+
+export interface IngredientPurchase { id: string; ingredient_id: string; quantity: number; unit: StockUnit; normalized_quantity: number; total_cost: number; unit_cost: number; supplier: string | null; purchase_date: string; notes: string | null; created_at: string; }
+export interface IngredientPurchaseInsert { [key: string]: unknown; id?: string; ingredient_id: string; quantity: number; unit: StockUnit; normalized_quantity: number; total_cost: number; unit_cost: number; supplier?: string | null; purchase_date?: string; notes?: string | null; created_at?: string; }
+export interface IngredientPurchaseUpdate { [key: string]: unknown; quantity?: number; unit?: StockUnit; normalized_quantity?: number; total_cost?: number; unit_cost?: number; supplier?: string | null; purchase_date?: string; notes?: string | null; }

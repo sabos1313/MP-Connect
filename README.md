@@ -30,7 +30,7 @@ npx supabase link --project-ref <project-ref>
 npx supabase db push
 ```
 
-Este repositório não possui um projeto Supabase vinculado e a migration não foi aplicada remotamente por esta sessão. A existência do arquivo SQL não representa uma aplicação bem-sucedida no projeto remoto.
+O projeto está vinculado ao Supabase remoto `hnyylcqeoxlzgvrkseem` e a migration `20260904000000_initial_schema.sql` foi aplicada com sucesso. Confirme o status com `npx supabase migration list` antes de publicar novas migrations.
 
 Todas as tabelas de negócio têm Row Level Security habilitado. Como este é um aplicativo de usuário único sem login, as policies são individuais, limitadas às oito tabelas do aplicativo e concedem operações somente ao papel público `anon`. O schema não expõe outras tabelas nem usa policies genéricas para todo o banco. Essa escolha permite o funcionamento sem sessão, mas não oferece isolamento entre visitantes que obtenham a URL e a chave pública; se o sistema precisar de privacidade ou múltiplos usuários, autenticação e policies por usuário deverão ser reintroduzidas antes de publicar.
 
@@ -44,7 +44,7 @@ Os contratos do primeiro módulo estão em `src/types/database.ts` e o cliente S
 npx supabase gen types typescript --linked > src/types/database.generated.ts
 ```
 
-Depois, revise os aliases usados pelo aplicativo antes de substituir o contrato versionado. A CLI do Supabase não está instalada neste ambiente no momento.
+Depois, revise os aliases usados pelo aplicativo antes de substituir o contrato versionado.
 
 ## Verificação
 
@@ -64,7 +64,6 @@ Dashboard, estoque, aniversários, relatórios e configurações consultam dados
 ## Estrutura
 
 - `src/components/ui`: componentes visuais reutilizáveis.
-- `src/contexts`: estado transversal, incluindo a sessão do Supabase Auth.
 - `src/layouts`: composição estrutural da aplicação.
 - `src/lib`: integrações e configurações compartilhadas.
 - `src/pages`: páginas e estados de cada área.
@@ -75,10 +74,10 @@ Dashboard, estoque, aniversários, relatórios e configurações consultam dados
 
 ## GitHub Pages
 
-O workflow usa `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` como **Variables** públicas do repositório, não como secrets administrativos. Configure essas duas variables em `Settings > Secrets and variables > Actions > Variables`, habilite GitHub Pages com `GitHub Actions` como source e faça push na branch `main`. O workflow cria `404.html` para preservar o `BrowserRouter` em refresh.
+O workflow usa `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` como **Variables** públicas do repositório, não como secrets administrativos. Configure essas duas variables em `Settings > Secrets and variables > Actions > Variables`, habilite GitHub Pages com `GitHub Actions` como source e faça push na branch `main`. O arquivo `public/404.html` preserva as rotas da SPA em refresh.
 
 URL publicada para este repositório: `https://sabos1313.github.io/MP-Connect/`. As rotas internas usam hash (`/#/insumos`, `/#/produtos`, etc.) para evitar 404 de refresh no GitHub Pages.
 
 O workflow `ci.yml` roda em pushes e pull requests. O workflow `deploy.yml` roda em pushes na `main` e por `workflow_dispatch`, executando instalação, lint, testes opcionais, build, upload do artefato e deploy oficial do GitHub Pages.
 
-O build e os testes locais não comprovam que o workflow remoto foi executado nem que o banco remoto está disponível. A migration precisa ser aplicada ao projeto Supabase antes de usar as operações.
+O build e os testes locais não comprovam que o workflow remoto foi executado nem que o banco remoto está disponível. A migration já aplicada é pré-requisito para usar as operações, e as Variables do GitHub precisam estar preenchidas para o bundle publicado conectar ao Supabase.

@@ -260,7 +260,7 @@ begin
     item_subtotal := item_quantity * item_price;
     insert into public.sale_items (sale_id, product_id, quantity, unit_price, subtotal)
     values (sale_id, (item ->> 'product_id')::uuid, item_quantity, item_price, item_subtotal);
-    perform public.adjust_stock((p_product_id := (item ->> 'product_id')::uuid), (p_delta := -item_quantity), (p_movement_type := 'sale'), (p_reference_id := sale_id), (p_notes := 'Venda ' || sale_id));
+    perform public.adjust_stock(p_product_id := (item ->> 'product_id')::uuid, p_delta := -item_quantity, p_movement_type := 'sale', p_reference_id := sale_id, p_notes := 'Venda ' || sale_id);
   end loop;
   return sale_id;
 end;
@@ -281,7 +281,7 @@ begin
   if sale_row.status = 'cancelled' then raise exception 'Esta venda já foi cancelada.' using errcode = '22023'; end if;
   update public.sales set status = 'cancelled', cancelled_at = now(), cancellation_reason = p_reason where id = p_sale_id;
   for item in select * from public.sale_items where sale_id = p_sale_id loop
-    perform public.adjust_stock((p_product_id := item.product_id), (p_delta := item.quantity), (p_movement_type := 'adjustment'), (p_reference_id := p_sale_id), (p_notes := 'Estorno da venda ' || p_sale_id));
+    perform public.adjust_stock(p_product_id := item.product_id, p_delta := item.quantity, p_movement_type := 'adjustment', p_reference_id := p_sale_id, p_notes := 'Estorno da venda ' || p_sale_id);
   end loop;
 end;
 $$;
@@ -309,10 +309,10 @@ begin
     if item.current_stock < required_quantity then raise exception 'Estoque insuficiente para %.', item.name using errcode = '22003'; end if;
   end loop;
   for item in select fi.* from public.formula_items fi where fi.formula_id = p_formula_id loop
-    perform public.adjust_stock((p_ingredient_id := item.ingredient_id), (p_delta := -(item.quantity * multiplier)), (p_movement_type := 'production'), (p_reference_id := p_formula_id), (p_notes := 'Produção pela fórmula ' || formula_row.name));
+    perform public.adjust_stock(p_ingredient_id := item.ingredient_id, p_delta := -(item.quantity * multiplier), p_movement_type := 'production', p_reference_id := p_formula_id, p_notes := 'Produção pela fórmula ' || formula_row.name);
   end loop;
   select name into product_name from public.products where id = formula_row.product_id;
-  perform public.adjust_stock((p_product_id := formula_row.product_id), (p_delta := p_quantity), (p_movement_type := 'production'), (p_reference_id := p_formula_id), (p_notes := 'Produção de ' || product_name));
+  perform public.adjust_stock(p_product_id := formula_row.product_id, p_delta := p_quantity, p_movement_type := 'production', p_reference_id := p_formula_id, p_notes := 'Produção de ' || product_name);
   return jsonb_build_object('product_id', formula_row.product_id, 'quantity', p_quantity);
 end;
 $$;

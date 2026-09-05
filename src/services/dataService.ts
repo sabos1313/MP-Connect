@@ -1,7 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type {
-  AppSettings, AppSettingsInsert, Customer, CustomerInsert, Formula, FormulaInsert, FormulaItem, Ingredient, IngredientInsert, Product, ProductInsert, Sale, SaleItem, StockMovement, StockUnit, MovementType,
+  AppSettings, AppSettingsInsert, Customer, CustomerInsert, Formula, FormulaInsert, FormulaItem, Ingredient, IngredientInsert, IngredientPurchase, Product, ProductInsert, Sale, SaleItem, StockMovement, StockUnit, MovementType,
 } from '../types/database';
 
 export interface FormulaRecord extends Formula { items: FormulaItem[]; }
@@ -17,6 +17,10 @@ function ensure<T>({ data, error }: { data: T | null; error: PostgrestError | nu
   if (error) throw new Error(error.message);
   if (data === null) throw new Error('O Supabase não retornou o registro esperado.');
   return data;
+}
+
+function ensureSuccess({ error }: { error: PostgrestError | null }) {
+  if (error) throw new Error(error.message);
 }
 
 export async function listIngredients(search = '', active?: boolean) {
@@ -65,8 +69,8 @@ export async function saveFormula(input: FormulaInsert, items: Array<{ ingredien
   const savedFormula: Formula = id
     ? ensure(await client().from('formulas').update(input).eq('id', id).select().single())
     : ensure(await client().from('formulas').insert(input).select().single());
-  if (id) ensure(await client().from('formula_items').delete().eq('formula_id', id));
-  if (items.length) ensure(await client().from('formula_items').insert(items.map((item) => ({ ...item, formula_id: savedFormula.id }))));
+  if (id) ensureSuccess(await client().from('formula_items').delete().eq('formula_id', id));
+  if (items.length) ensureSuccess(await client().from('formula_items').insert(items.map((item) => ({ ...item, formula_id: savedFormula.id }))));
   return savedFormula;
 }
 
@@ -83,7 +87,7 @@ export async function createSale(customerId: string | null, items: { product_id:
 }
 
 export async function cancelSale(id: string, reason: string) {
-  return ensure(await client().rpc('cancel_sale', { p_sale_id: id, p_reason: reason || null }));
+  ensureSuccess(await client().rpc('cancel_sale', { p_sale_id: id, p_reason: reason || null }));
 }
 
 export async function adjustStock(item: { ingredient_id?: string; product_id?: string; delta: number; movement_type: MovementType; notes?: string }) {
@@ -94,13 +98,31 @@ export async function produceFormula(formulaId: string, quantity: number) {
   return ensure(await client().rpc('produce_formula', { p_formula_id: formulaId, p_quantity: quantity }));
 }
 
+export async function registerIngredientPurchase(input: { ingredient_id: string; quantity: number; unit: StockUnit; total_cost: number; supplier?: string | null; purchase_date?: string; notes?: string | null }) {
+  return ensure(await client().rpc('register_ingredient_purchase', {
+    p_ingredient_id: input.ingredient_id,
+    p_quantity: input.quantity,
+    p_unit: input.unit,
+    p_total_cost: input.total_cost,
+    p_supplier: input.supplier ?? null,
+    p_purchase_date: input.purchase_date,
+    p_notes: input.notes ?? null,
+  }));
+}
+
+export async function listIngredientPurchases(ingredientId?: string) {
+  let query = client().from('ingredient_purchases').select('*').order('purchase_date', { ascending: false });
+  if (ingredientId) query = query.eq('ingredient_id', ingredientId);
+  return ensure(await query) as IngredientPurchase[];
+}
+
 export async function listMovements(limit = 100) {
   return ensure(await client().from('stock_movements').select('*').order('created_at', { ascending: false }).limit(limit));
 }
 
 export async function getSettings() {
-  const result = ensure(await client().from('app_settings').select('*').eq('id', 1).maybeSingle());
-  const settings = await result;
+  const { data: settings, error } = await client().from('app_settings').select('*').eq('id', 1).maybeSingle();
+  if (error) throw new Error(error.message);
   if (settings) return settings;
   return ensure(await client().from('app_settings').insert({ id: 1 }).select().single());
 }
@@ -119,7 +141,7 @@ export async function getBirthdays() {
 }
 
 export async function deleteIfSafe(table: 'ingredients' | 'products' | 'customers', id: string) {
-  return ensure(await client().from(table).delete().eq('id', id));
+  ensureSuccess(await client().from(table).delete().eq('id', id));
 }
 
 export function formatCurrency(value: number, currency = 'BRL') {
